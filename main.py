@@ -21,14 +21,15 @@ def load_models(dir: str) -> list[Model]:
 
 def project_point_to_2d(point_3d: np.array, view_width: int, view_heigh: int, focal: int) -> tuple[int, int]:
     # If the point is not in front of the camera, return None
-    if point_3d[1] <= focal:
+    if point_3d[2] <= focal:
         return None
 
     # Calculate the scaling factor
-    scale = focal / point_3d[1]
+    scale = focal / point_3d[2]
 
     # Translate the point
-    return scale * point_3d[0] + view_width / 2, view_heigh / 2 - scale * point_3d[2]
+    return scale * point_3d[0] + view_width / 2, view_heigh / 2 - scale * point_3d[1]
+    # return point_3d[0] * focal / point_3d[1] + view_width / 2, view_heigh / 2 - focal * point_3d[2] / point_3d[2]
 
 
 def translation_matrix(dx: int, dy: int, dz: int) -> np.array:
@@ -124,10 +125,10 @@ root.bind('=', lambda event: change_focal_and_draw(canvas, models, FOCAL_STEP))
 root.bind('-', lambda event: change_focal_and_draw(canvas, models, -FOCAL_STEP))
 
 TRANSLATION_STEP = 50
-FORWARD_TRANSLATION = translation_matrix(0, -TRANSLATION_STEP, 0)
+FORWARD_TRANSLATION = translation_matrix(0, 0, -TRANSLATION_STEP)
 root.bind('w', lambda event: transform_and_draw(
     canvas, models, FORWARD_TRANSLATION, focal_length))
-BACKWARD_TRANSLATION = translation_matrix(0, +TRANSLATION_STEP, 0)
+BACKWARD_TRANSLATION = translation_matrix(0, 0, TRANSLATION_STEP)
 root.bind('s', lambda event: transform_and_draw(
     canvas, models, BACKWARD_TRANSLATION, focal_length))
 LEFT_TRANSLATION = translation_matrix(TRANSLATION_STEP, 0, 0)
@@ -136,19 +137,19 @@ root.bind('a', lambda event: transform_and_draw(
 RIGHT_TRANSLATION = translation_matrix(-TRANSLATION_STEP, 0, 0)
 root.bind('d', lambda event: transform_and_draw(
     canvas, models, RIGHT_TRANSLATION, focal_length))
-UP_TRANSLATION = translation_matrix(0, 0, -TRANSLATION_STEP)
+UP_TRANSLATION = translation_matrix(0, -TRANSLATION_STEP, 0)
 root.bind('<space>', lambda event: transform_and_draw(
     canvas, models, UP_TRANSLATION, focal_length))
-DOWN_TRANSLATION = translation_matrix(0, 0, +TRANSLATION_STEP)
+DOWN_TRANSLATION = translation_matrix(0, TRANSLATION_STEP, 0)
 root.bind('<Shift_L>', lambda event: transform_and_draw(
     canvas, models, DOWN_TRANSLATION, focal_length))
 
 ROTATION_STEP = np.radians(5)
 COUNTER_CLOCKWISE_ROTATION = rotation_matrix(ROTATION_STEP, RotationAxis.Z)
-root.bind('q', lambda event: transform_and_draw(
+root.bind('z', lambda event: transform_and_draw(
     canvas, models, COUNTER_CLOCKWISE_ROTATION, focal_length))
 CLOCKWISE_ROTATION = rotation_matrix(-ROTATION_STEP, RotationAxis.Z)
-root.bind('e', lambda event: transform_and_draw(
+root.bind('x', lambda event: transform_and_draw(
     canvas, models, CLOCKWISE_ROTATION, focal_length))
 PITCH_UP_ROTATION = rotation_matrix(ROTATION_STEP, RotationAxis.X)
 root.bind('r', lambda event: transform_and_draw(
@@ -157,10 +158,10 @@ PITCH_DOWN_ROTATION = rotation_matrix(-ROTATION_STEP, RotationAxis.X)
 root.bind('f', lambda event: transform_and_draw(
     canvas, models, PITCH_DOWN_ROTATION, focal_length))
 LEFT_ROTATION = rotation_matrix(ROTATION_STEP, RotationAxis.Y)
-root.bind('x', lambda event: transform_and_draw(
+root.bind('e', lambda event: transform_and_draw(
     canvas, models, LEFT_ROTATION, focal_length))
 RIGHT_ROTATION = rotation_matrix(-ROTATION_STEP, RotationAxis.Y)
-root.bind('z', lambda event: transform_and_draw(
+root.bind('q', lambda event: transform_and_draw(
     canvas, models, RIGHT_ROTATION, focal_length))
 
 root.mainloop()
