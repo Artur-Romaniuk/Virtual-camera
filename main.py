@@ -28,8 +28,13 @@ def project_point_to_2d(point_3d: np.array, view_width: int, view_heigh: int, fo
     scale = focal / point_3d[2]
 
     # Translate the point
-    return scale * point_3d[0] + view_width / 2, view_heigh / 2 - scale * point_3d[1]
-    # return point_3d[0] * focal / point_3d[1] + view_width / 2, view_heigh / 2 - focal * point_3d[2] / point_3d[2]
+    x = point_3d[0] * scale
+    y = point_3d[1] * scale
+
+    # Offset to the center of the screen
+    x += view_width / 2
+    y += view_heigh / 2
+    return x, y
 
 
 def translation_matrix(dx: int, dy: int, dz: int) -> np.array:
