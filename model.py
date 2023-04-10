@@ -19,7 +19,7 @@ class Model:
         with open(file_name, 'r') as file:
             i = 0
             for line in file.readlines():
-                edge = [float(p) for p in line.split(', ')]
+                edge = [int(p) for p in line.split(', ')]
                 p1 = tuple(edge[:3])
                 p2 = tuple(edge[3:])
 
