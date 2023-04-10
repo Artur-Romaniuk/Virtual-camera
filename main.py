@@ -1,3 +1,4 @@
+from enum import Enum
 from os import listdir
 from os.path import isfile, join
 import tkinter as tk
@@ -18,13 +19,9 @@ def load_models(dir: str) -> list[Model]:
     return models
 
 
-def is_point_visible(point_3d: np.array, focal: int) -> bool:
-    return point_3d[1] > focal
-
-
-def translate_3d_to_2d(point_3d: np.array, view_width: int, view_heigh: int, focal: int) -> tuple[int, int]:
+def project_point_to_2d(point_3d: np.array, view_width: int, view_heigh: int, focal: int) -> tuple[int, int]:
     # If the point is not in front of the camera, return None
-    if not is_point_visible(point_3d, focal):
+    if point_3d[1] <= focal:
         return None
 
     # Calculate the scaling factor
@@ -41,19 +38,31 @@ def translation_matrix(dx: int, dy: int, dz: int) -> np.array:
     return matrix
 
 
-def rotation_matrix(radians: int, axis: str) -> np.array:
+class RotationAxis(Enum):
+    X = 0
+    Y = 1
+    Z = 2
+
+
+def rotation_matrix(radians: int, axis: RotationAxis) -> np.array:
     sin = np.sin(radians)
     cos = np.cos(radians)
     matrix = np.eye(4)
-    if axis == 'x':
-        matrix[1:3, 1:3] = np.array([cos, -sin, sin, cos]).reshape(2, 2)
-    elif axis == 'y':
-        matrix[0, 0] = cos
-        matrix[2, 0] = sin
-        matrix[2, 0] = -sin
-        matrix[2, 2] = cos
-    elif axis == 'z':
-        matrix[0:2, 0:2] = np.array([cos, -sin, sin, cos]).reshape(2, 2)
+    if axis == RotationAxis.X:
+        matrix[1][1] = cos
+        matrix[1][2] = -sin
+        matrix[2][1] = sin
+        matrix[2][2] = cos
+    elif axis == RotationAxis.Y:
+        matrix[0][0] = cos
+        matrix[0][2] = sin
+        matrix[2][0] = -sin
+        matrix[2][2] = cos
+    elif axis == RotationAxis.Z:
+        matrix[0][0] = cos
+        matrix[0][1] = -sin
+        matrix[1][0] = sin
+        matrix[1][1] = cos
 
     return matrix
 
@@ -63,19 +72,19 @@ def draw(canvas: tk.Canvas, models: list[Model], focal: int) -> None:
     canvas.winfo_toplevel().update()
     for model in models:
         for node in model.nodes:
-            if is_point_visible(node, focal):
-                center = translate_3d_to_2d(
-                    node, canvas.winfo_reqwidth(), canvas.winfo_reqheight(), focal)
+            center = project_point_to_2d(
+                node, canvas.winfo_reqwidth(), canvas.winfo_reqheight(), focal)
+            if center is not None:
                 canvas.create_oval((center[0] - 1, center[1] -
                                     1, center[0] + 1, center[1] + 1))
         for edge in model.edges:
-            a, b = model.nodes[edge[0]], model.nodes[edge[1]]
-            if is_point_visible(a, focal) and is_point_visible(b, focal):
-                ax, ay = translate_3d_to_2d(
-                    a, canvas.winfo_reqwidth(), canvas.winfo_reqheight(), focal)
-                bx, by = translate_3d_to_2d(
-                    b, canvas.winfo_reqwidth(), canvas.winfo_reqheight(), focal)
-                canvas.create_line((ax, ay, bx, by))
+            node1, node2 = model.nodes[edge[0]], model.nodes[edge[1]]
+            node1 = project_point_to_2d(
+                node1, canvas.winfo_reqwidth(), canvas.winfo_reqheight(), focal)
+            node2 = project_point_to_2d(
+                node2, canvas.winfo_reqwidth(), canvas.winfo_reqheight(), focal)
+            if node1 is not None and node2 is not None:
+                canvas.create_line((node1[0], node1[1], node2[0], node2[1]))
 
 
 def transform_and_draw(canvas: tk.Canvas, models: list[Model], matrix: np.array, focal: int) -> None:
@@ -135,20 +144,23 @@ root.bind('<Shift_L>', lambda event: transform_and_draw(
     canvas, models, DOWN_TRANSLATION, focal_length))
 
 ROTATION_STEP = np.radians(5)
-COUNTER_CLOCKWISE_ROTATION = rotation_matrix(ROTATION_STEP, 'z')
-CLOCKWISE_ROTATION = rotation_matrix(-ROTATION_STEP, 'z')
-PITCH_UP_ROTATION = rotation_matrix(ROTATION_STEP, 'x')
-PITCH_DOWN_ROTATION = rotation_matrix(-ROTATION_STEP, 'x')
-LEFT_ROTATION = rotation_matrix(ROTATION_STEP, 'y')
-RIGHT_ROTATION = rotation_matrix(-ROTATION_STEP, 'y')
-
+COUNTER_CLOCKWISE_ROTATION = rotation_matrix(ROTATION_STEP, RotationAxis.Z)
 root.bind('q', lambda event: transform_and_draw(
     canvas, models, COUNTER_CLOCKWISE_ROTATION, focal_length))
+CLOCKWISE_ROTATION = rotation_matrix(-ROTATION_STEP, RotationAxis.Z)
 root.bind('e', lambda event: transform_and_draw(
     canvas, models, CLOCKWISE_ROTATION, focal_length))
+PITCH_UP_ROTATION = rotation_matrix(ROTATION_STEP, RotationAxis.X)
 root.bind('r', lambda event: transform_and_draw(
     canvas, models, PITCH_UP_ROTATION, focal_length))
+PITCH_DOWN_ROTATION = rotation_matrix(-ROTATION_STEP, RotationAxis.X)
 root.bind('f', lambda event: transform_and_draw(
     canvas, models, PITCH_DOWN_ROTATION, focal_length))
+LEFT_ROTATION = rotation_matrix(ROTATION_STEP, RotationAxis.Y)
+root.bind('x', lambda event: transform_and_draw(
+    canvas, models, LEFT_ROTATION, focal_length))
+RIGHT_ROTATION = rotation_matrix(-ROTATION_STEP, RotationAxis.Y)
+root.bind('z', lambda event: transform_and_draw(
+    canvas, models, RIGHT_ROTATION, focal_length))
 
 root.mainloop()
