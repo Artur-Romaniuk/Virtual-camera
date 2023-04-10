@@ -142,18 +142,18 @@ root.bind('a', lambda event: transform_and_draw(
 RIGHT_TRANSLATION = translation_matrix(-TRANSLATION_STEP, 0, 0)
 root.bind('d', lambda event: transform_and_draw(
     canvas, models, RIGHT_TRANSLATION, focal_length))
-UP_TRANSLATION = translation_matrix(0, -TRANSLATION_STEP, 0)
+UP_TRANSLATION = translation_matrix(0, TRANSLATION_STEP, 0)
 root.bind('<space>', lambda event: transform_and_draw(
     canvas, models, UP_TRANSLATION, focal_length))
-DOWN_TRANSLATION = translation_matrix(0, TRANSLATION_STEP, 0)
+DOWN_TRANSLATION = translation_matrix(0, -TRANSLATION_STEP, 0)
 root.bind('<Shift_L>', lambda event: transform_and_draw(
     canvas, models, DOWN_TRANSLATION, focal_length))
 
 ROTATION_STEP = np.radians(5)
-COUNTER_CLOCKWISE_ROTATION = rotation_matrix(ROTATION_STEP, RotationAxis.Z)
+COUNTER_CLOCKWISE_ROTATION = rotation_matrix(-ROTATION_STEP, RotationAxis.Z)
 root.bind('z', lambda event: transform_and_draw(
     canvas, models, COUNTER_CLOCKWISE_ROTATION, focal_length))
-CLOCKWISE_ROTATION = rotation_matrix(-ROTATION_STEP, RotationAxis.Z)
+CLOCKWISE_ROTATION = rotation_matrix(ROTATION_STEP, RotationAxis.Z)
 root.bind('x', lambda event: transform_and_draw(
     canvas, models, CLOCKWISE_ROTATION, focal_length))
 PITCH_UP_ROTATION = rotation_matrix(ROTATION_STEP, RotationAxis.X)
